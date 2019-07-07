@@ -1,0 +1,364 @@
+﻿<html>
+<meta name="viewport" content="width=device-width, initial-scale=.9, user-scalable=no">
+<meta name="theme-color" content="black" />
+<head>
+    <title>TPC圖號座標定位</title>
+    <script type="text/javascript" src="proj4.js"></script>
+    <script type="text/javascript" src="./jquery-3.3.1.min.js"></script>
+    <!--
+	<script type="text/javascript" src="./test1.js"></script>
+    <script type="text/javascript" src="./test2.js"></script>
+    !-->
+	<link id="theme" href="./style1.css" rel="stylesheet" tittle="style1">
+    <script src="./clusterize.min.js"></script>
+
+    <style>
+    	
+    </style>
+
+    <script>
+        var latWGS84, lonWGS84, latTWD67TM2, lonTWD67TM2;
+		//rows = rows.concat(rowss);
+        const idxLat = [
+                       "2750000", "2750000", "2750000",
+                       "2700000", "2700000", "2700000",
+                       "2650000", "2650000", "2650000",
+            "2600000", "2600000", "2600000",
+            "2550000", "2550000", "2550000",
+            "2500000", "2500000", "2500000",
+            "2894000", "2450000", "2450000",
+                       "2400000", "2400000",
+            "2614000", "2564000", "2675800"
+        ];
+        const idxLon = [
+                      "170000", "250000", "330000",
+                      "170000", "250000", "330000",
+                      "170000", "250000", "330000",
+            "090000", "170000", "250000",
+            "090000", "170000", "250000",
+            "090000", "170000", "250000",
+            "010000", "170000", "250000",
+                      "170000", "250000",
+            "275000", "275000", "010000" //"552700"
+        ];
+        const alphabet = [
+                 "A", "B", "C",
+                 "D", "E", "F",
+                 "G", "H", "I",
+            "J", "K", "L",
+            "M", "N", "O",
+            "P", "Q", "R",
+            "S", "T", "U",
+                 "V", "W",
+            "X", "Y", "Z"
+        ];
+
+		function openGM() {
+            var url = "https://www.google.com/maps/search/?api=1&query=" + latWGS84 + "," + lonWGS84;
+            window.open(url, '_blank');
+        }
+
+        function openBM() {
+            var url = "http://www.bing.com/maps/?v=2&cp=" + latWGS84 + "~" + lonWGS84 + "&lvl=16&dir=0&sty=c&sp=point." + latWGS84 + "_" + lonWGS84 + "_" + document.getElementById("inGrid").value;
+            window.open(url, "_blank");
+        }
+
+        function openWindowMaps() {
+            var url = "bingmaps:?collection=point." + latWGS84 + "_" + lonWGS84 + "_" + document.getElementById("inGrid").value;
+            window.open(url, "_self");
+        }
+
+        function openOSM() {
+            var url = "http://osm.org/?" + "mlat=" + latWGS84 + "&" + "mlon=" + lonWGS84 + "&" + "#map=" + "17" + "/"+ latWGS84 + "/" + lonWGS84;
+            window.open(url, '_blank');
+        }
+
+        function chkInputGrid() {
+            var letters = /^[a-zA-Z]+$/;
+            var numbers = /^[0-9]+$/;
+            var lengthGrid = document.getElementById("inGrid").value.length;
+            var Grid = document.getElementById("inGrid").value;
+            if (!((lengthGrid == 9) || (lengthGrid == 11))) return false;			
+            if (!Grid[0].match(letters)) return false;
+            if (!Grid[1].match(numbers)) return false;
+            if (!Grid[2].match(numbers)) return false;
+            if (!Grid[3].match(numbers)) return false;
+            if (!Grid[4].match(numbers)) return false;
+            if (!Grid[6].match(letters)) return false;
+            if (!Grid[5].match(letters)) return false;
+            if (!Grid[7].match(numbers)) return false;
+            if (!Grid[8].match(numbers)) return false;
+            if (lengthGrid == 11) {
+                if (!Grid[9].match(numbers)) return false;
+                if (!Grid[10].match(numbers)) return false;
+            }
+			return true;
+        //document.getElementById("chkGrid").innerHTML = "格式錯誤"
+		}
+		
+		function inputGrid_Onchange() {
+		    if((document.getElementById('inGrid').value.length == 0)){
+			    document.getElementById('inGrid').style.backgroundColor = "#9DE0AD";
+				document.getElementById("btn1").disabled = true;
+				document.getElementById("btn2").disabled = true;
+				document.getElementById("btn3").disabled = true;
+				document.getElementById("btn4").disabled = true;
+			}
+			else if(chkInputGrid()){
+			    document.getElementById('inGrid').style.backgroundColor = "#9DE0AD";
+				document.getElementById("btn1").disabled = false;
+				document.getElementById("btn2").disabled = false;
+				document.getElementById("btn3").disabled = false;
+				document.getElementById("btn4").disabled = false;
+			    grid2twd67();
+			    execConvert();
+			}
+			else {
+			    document.getElementById('inGrid').style.backgroundColor = "#FF0000";
+				document.getElementById("btn1").disabled = true;
+				document.getElementById("btn2").disabled = true;
+				document.getElementById("btn3").disabled = true;
+				document.getElementById("btn4").disabled = true;
+				}
+			//if(document.getElementById('inGrid').value == "66666666666"){
+			//	document.getElementById("theme").href = "./style2.css";
+			//	//document.getElementById("test").innerHTML = "done";
+			//	document.getElementById("divLogo").onclick = function (){
+			//	   audio.play();
+			//	}
+			//	//var audio = new Audio('./music8.mp3');
+            //    audio.play();
+			//	//XD();
+			//}
+		}
+		
+		function divLogoOnClick() {
+		    if(document.getElementById('inGrid').value == "66666666666"){
+			    document.getElementById("theme").href = "./style2.css";
+			    document.getElementById('divForm').style.background = "black";
+				var audio = new Audio('./music8.mp3');
+		        Audio.loop = true;
+				audio.play();
+			}
+        }
+		
+        function grid2twd67() {
+            var grid = document.getElementById('inGrid').value;
+            grid = grid.toUpperCase();
+
+			var lat = +idxLat[alphabet.indexOf(grid[0])] + +(grid[3]*10 + +grid[4])*500 + +alphabet.indexOf(grid[6])*100 + +grid[8]*10;
+			if (grid.length == 11) lat = lat+ +grid[10];
+			
+			var lon = +idxLon[alphabet.indexOf(grid[0])] + +(grid[1]*10 + +grid[2])*800 + +alphabet.indexOf(grid[5])*100 + +grid[7]*10;
+			if (grid.length == 11) lon = lon+ +grid[9];
+
+            latTWD67TM2 = lat;
+            lonTWD67TM2 = lon;
+            //document.getElementById('test').innerHTML = lonTWD67TM2 + "," + latTWD67TM2;
+        }
+
+        function execConvert() {
+            proj4.defs("EPSG:3827", "+proj=tmerc +towgs84=-752,-358,-179,-.0000011698,.0000018398,.0000009822,.00002329 +lat_0=0 +lon_0=119 +x_0=250000 +y_0=0 +k=0.9999 +ellps=aust_SA +units=公尺");
+            proj4.defs("EPSG:3828", "+proj=tmerc +towgs84=-752,-358,-179,-.0000011698,.0000018398,.0000009822,.00002329 +lat_0=0 +lon_0=121 +x_0=250000 +y_0=0 +k=0.9999 +ellps=aust_SA  +units=公尺");
+            //proj4.defs("EPSG:3828:Liouciou","+proj=tmerc  +towgs84=-752,-358,-179,-.0000011698,.0000018398,.0000009822,.00002329 +lat_0=0 +lon_0=121 +x_0=250000 +y_0=1380 +k=0.9999 +ellps=aust_SA  +units=公尺");
+            proj4.defs("EPSG:3828:Liouciou", "+proj=tmerc +lat_0=0 +lon_0=121 +x_0=249180 +y_0=1590 +k=0.9999 +ellps=aust_SA  +units=公尺");
+            proj4.defs("EPSG:3829:Jinmen", "+proj=tmerc +towgs84=-637,-549,-203 +lon_0=117 +ellps=aust_SA +x_0=-122150 +y_0=-120 +k=0.9996 ");
+            proj4.defs("EPSG:3829:Mazu", "+proj=tmerc +towgs84=-637,-549,-203 +lon_0=117 +ellps=aust_SA +x_0=-279825 +y_0=20830 +k=0.9996 ");
+            var EPSG3827 = new proj4.Proj('EPSG:3827'); //TWD67 119分帶 澎湖
+            var EPSG3828 = new proj4.Proj('EPSG:3828'); //TWD67 121分帶
+            var EPSG3828L = new proj4.Proj('EPSG:3828:Liouciou'); //TWD67 121分帶
+            var EPSG3829J = new proj4.Proj('EPSG:3829:Jinmen'); //TWD67 117分帶 金門
+            var EPSG3829M = new proj4.Proj('EPSG:3829:Mazu'); //TWD67 117分帶 馬祖
+            var EPSG4326 = new proj4.Proj('EPSG:4326'); //WGS84
+			var toProj;
+			var grid = document.getElementById('inGrid').value.toUpperCase();
+			switch(grid[0]){
+			    case 'T':
+				    if((grid.substr(1, 2)<=20) && (grid.substr(3, 2)<=50))
+                        toProj=EPSG3828L;
+					else 
+					    toProj=EPSG3828; 
+                    break;
+                case 'S':
+                    toProj=EPSG3829M;
+                    break;
+				case 'X':
+				case 'Y':
+                    toProj=EPSG3827;
+                    break;
+			    case 'Z':
+				    toProj=EPSG3829J;
+				    break;
+                default:
+                    toProj=EPSG3828; 
+			
+			}
+            var data0 = [Number(lonTWD67TM2), Number(latTWD67TM2)];
+            var data1 = proj4(toProj, EPSG4326, data0);
+            lonWGS84 = data1[0];
+            latWGS84 = data1[1];
+            //document.getElementById("lon").innerHTML = data1[0];
+            //document.getElementById("lat").innerHTML = data1[1];
+        }
+		
+    </script>
+</head>
+
+<body>
+	<div id="divForm">
+	    <div id="divLogo" style="width:350px;text-align:center" onclick="divLogoOnClick()">
+		<img src = "./logo.png">
+		</div>
+	    <div id="divInGrid">	
+        <input type="search" placeholder=">圖號座標" id="inGrid" maxlength="11" size="11" oninput="inputGrid_Onchange();" onchange="inputGrid_Onchange();" />
+        </div>
+		
+	    <!-- <b id="test" ></b>
+	    !-->
+	<!--
+	<hr align=left width=348px>
+    
+	
+    <br /> 緯度：
+    <b id="lat"></b>
+    <br /> 經度：
+    <b id="lon"></b>
+    <br />
+	<p id="test">test message</p>
+	!-->
+	
+	    <div id="divButton1">
+        <button type="button" class="button" id="btn1" onclick="openGM()" disabled=true>Google Maps</button>
+        <button type="button" class="button" id="btn2" onclick="openBM()" disabled=true>Bing Maps</button>
+	    </div>
+		<div id="divButton2">
+		<button type="button" class="button" id="btn3" onclick="openWindowMaps()" disabled=true>Windows Maps</button>
+        <button type="button" class="button" id="btn4" onclick="openOSM()" disabled=true>OpenStreetMap</button>
+        </div>
+	
+    <!--HTML-->
+	<!--<hr align=left width=310px>-->
+	    <div class="container">
+        <input type="search" style="font-size:32px;border-radius: 16px 16px 0px 0px" id="search" placeholder=">桿號查詢(Enter)" />
+        <!--
+  <div class="clusterize">
+    <table class="tttt">>
+      <thead>
+        <tr>
+          <th>行政區</th>
+          <th>圖號座標</th>
+          <th>電桿編號</th>
+        </tr>
+      </thead>
+    </table>
+	!-->
+            <div style="overflow-x: hidden;width:346px;height:calc(100% - 300px);border-radius: 0px 0px 16px 16px;border: 2px solid black;" id="scrollArea" class="clusterize-scroll">
+                <table class="tttt">
+                    <tbody id="contentArea" class="clusterize-content">
+                        <tr class="clusterize-no-data">
+                            <td>Loading data…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        var rows = [],
+            search = document.getElementById('search');
+
+        
+		 
+        var filterRows = function(rows) {
+            var results = [];
+            for (var i = 0, ii = rows.length; i < ii; i++) {
+                if (rows[i].active) results.push(rows[i].markup)
+            }
+            return results;
+        }
+
+        /*
+         * Init clusterize.js
+         */
+        var clusterize = new Clusterize({
+            rows: filterRows(rows),
+            scrollId: 'scrollArea',
+            contentId: 'contentArea',
+			rows_in_block: '50',
+			no_data_text: '查無桿號'
+        });
+
+        $('#contentArea').on('click', 'tr', function() {
+            // do stuff with row
+            $("#inGrid").val($(this).find("td").eq(1).html());
+            //grid2twd67();
+            //execConvert();
+            inputGrid_Onchange();
+			//document.getElementById("test").innerHTML = "ok";	
+        });
+		
+		$.getJSON("./pole.min.json", function(data) {
+            //for(i=0;i<data.length;i++){
+            for (var i = 0; i < data.length; i++) {
+                rows.push({
+                    values: [data[i].Area, data[i].Grid, data[i].Pole],
+                    markup: '<tr>' +
+                        '<td>' + data[i].Area + '</td>' +
+                        '<td>' + data[i].Grid + '</td>' +
+                        '<td>' + data[i].Pole + '</td>' +
+                        '</tr>',
+                    active: true
+                });
+            }
+        }, )
+		.done(function() {
+            clusterize.update(filterRows(rows));
+        });
+
+		document.getElementById('search').onkeypress = function(e){
+            if (!e) e = window.event;
+            var keyCode = e.keyCode || e.which;
+            if (keyCode == '13'){
+			    inGridStr = search.value.toUpperCase();
+				inGridStrAry = inGridStr.split(' ');
+                for (var i = 0, ii = rows.length; i < ii; i++) {
+                    var suitable = false;
+					for(var j=0;j<inGridStrAry.length;j++){
+                        if (rows[i].values[2].toString().indexOf(inGridStrAry[j]) + 1){
+                            suitable = true;
+						}else{
+						    suitable = false;
+							break;
+						}
+					}
+                    rows[i].active = suitable;
+                }
+			clusterize.update(filterRows(rows));
+            }
+          }
+		  
+		  document.getElementById('inGrid').onkeypress = function(e){
+            if (!e) e = window.event;
+            var keyCode = e.keyCode || e.which;
+                if (keyCode == '13'){
+                    if(chkInputGrid()) openGM();
+                }
+          }
+    </script>
+	<!-- Histats.com  START  (aync)-->
+<script type="text/javascript">var _Hasync= _Hasync|| [];
+_Hasync.push(['Histats.start', '1,4233770,4,0,0,0,00010000']);
+_Hasync.push(['Histats.fasi', '1']);
+_Hasync.push(['Histats.track_hits', '']);
+(function() {
+var hs = document.createElement('script'); hs.type = 'text/javascript'; hs.async = true;
+hs.src = ('//s10.histats.com/js15_as.js');
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
+})();</script>
+<noscript><a href="/" target="_blank"><img  src="//sstatic1.histats.com/0.gif?4233770&101" alt="free hit counter" border="0"></a></noscript>
+<!-- Histats.com  END  -->
+</body>
+
+</html>
