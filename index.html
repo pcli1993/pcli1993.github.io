@@ -1,14 +1,11 @@
-﻿<html>
+<html>
 <meta name="viewport" content="width=device-width, initial-scale=.9, user-scalable=no">
 <meta name="theme-color" content="black" />
 <head>
-    <title>TPC圖號座標定位aaa</title>
+    <title>TPC圖號座標定位</title>
     <script type="text/javascript" src="proj4.js"></script>
     <script type="text/javascript" src="./jquery-3.3.1.min.js"></script>
-    <!--
-	<script type="text/javascript" src="./test1.js"></script>
-    <script type="text/javascript" src="./test2.js"></script>
-    !-->
+
 	<link id="theme" href="./style1.css" rel="stylesheet" tittle="style1">
     <script src="./clusterize.min.js"></script>
 
@@ -58,20 +55,7 @@
             window.open(url, '_blank');
         }
 
-        function openBM() {
-            var url = "http://www.bing.com/maps/?v=2&cp=" + latWGS84 + "~" + lonWGS84 + "&lvl=16&dir=0&sty=c&sp=point." + latWGS84 + "_" + lonWGS84 + "_" + document.getElementById("inGrid").value;
-            window.open(url, "_blank");
-        }
-
-        function openWindowMaps() {
-            var url = "bingmaps:?collection=point." + latWGS84 + "_" + lonWGS84 + "_" + document.getElementById("inGrid").value;
-            window.open(url, "_self");
-        }
-
-        function openOSM() {
-            var url = "http://osm.org/?" + "mlat=" + latWGS84 + "&" + "mlon=" + lonWGS84 + "&" + "#map=" + "17" + "/"+ latWGS84 + "/" + lonWGS84;
-            window.open(url, '_blank');
-        }
+   
 
         function chkInputGrid() {
             var letters = /^[a-zA-Z]+$/;
@@ -120,28 +104,10 @@
 				document.getElementById("btn3").disabled = true;
 				document.getElementById("btn4").disabled = true;
 				}
-			//if(document.getElementById('inGrid').value == "66666666666"){
-			//	document.getElementById("theme").href = "./style2.css";
-			//	//document.getElementById("test").innerHTML = "done";
-			//	document.getElementById("divLogo").onclick = function (){
-			//	   audio.play();
-			//	}
-			//	//var audio = new Audio('./music8.mp3');
-            //    audio.play();
-			//	//XD();
-			//}
+		
 		}
 		
-		function divLogoOnClick() {
-		    if(document.getElementById('inGrid').value == "66666666666"){
-			    document.getElementById("theme").href = "./style2.css";
-			    document.getElementById('divForm').style.background = "black";
-				var audio = new Audio('./music8.mp3');
-		        Audio.loop = true;
-				audio.play();
-			}
-        }
-		
+			
         function grid2twd67() {
             var grid = document.getElementById('inGrid').value;
             grid = grid.toUpperCase();
@@ -213,56 +179,14 @@
         <input type="search" placeholder=">圖號座標" id="inGrid" maxlength="11" size="11" oninput="inputGrid_Onchange();" onchange="inputGrid_Onchange();" />
         </div>
 		
-	    <!-- <b id="test" ></b>
-	    !-->
-	<!--
-	<hr align=left width=348px>
-    
-	
-    <br /> 緯度：
-    <b id="lat"></b>
-    <br /> 經度：
-    <b id="lon"></b>
-    <br />
-	<p id="test">test message</p>
-	!-->
 	
 	    <div id="divButton1">
         <button type="button" class="button" id="btn1" onclick="openGM()" disabled=true>Google Maps</button>
-        <button type="button" class="button" id="btn2" onclick="openBM()" disabled=true>Bing Maps</button>
-	    </div>
-		<div id="divButton2">
-		<button type="button" class="button" id="btn3" onclick="openWindowMaps()" disabled=true>Windows Maps</button>
-        <button type="button" class="button" id="btn4" onclick="openOSM()" disabled=true>OpenStreetMap</button>
         </div>
 	
     <!--HTML-->
 	<!--<hr align=left width=310px>-->
-	    <div class="container">
-        <input type="search" style="font-size:32px;border-radius: 16px 16px 0px 0px" id="search" placeholder=">桿號查詢(Enter)" />
-        <!--
-  <div class="clusterize">
-    <table class="tttt">>
-      <thead>
-        <tr>
-          <th>行政區</th>
-          <th>圖號座標</th>
-          <th>電桿編號</th>
-        </tr>
-      </thead>
-    </table>
-	!-->
-            <div style="overflow-x: hidden;width:346px;height:calc(100% - 300px);border-radius: 0px 0px 16px 16px;border: 2px solid black;" id="scrollArea" class="clusterize-scroll">
-                <table class="tttt">
-                    <tbody id="contentArea" class="clusterize-content">
-                        <tr class="clusterize-no-data">
-                            <td>Loading data…</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+
 
     <script>
         
@@ -282,13 +206,7 @@
         /*
          * Init clusterize.js
          */
-        var clusterize = new Clusterize({
-            rows: filterRows(rows),
-            scrollId: 'scrollArea',
-            contentId: 'contentArea',
-			rows_in_block: '50',
-			no_data_text: '查無桿號'
-        });
+     
 
         $('#contentArea').on('click', 'tr', function() {
             // do stuff with row
@@ -316,8 +234,6 @@
 		.done(function() {
             clusterize.update(filterRows(rows));
         });
-
-		document.getElementById('search').onkeypress = function(e){
             if (!e) e = window.event;
             var keyCode = e.keyCode || e.which;
             if (keyCode == '13'){
